@@ -1,7 +1,222 @@
-# Insert chapter 2 title here
+# **RStudio Exercise 2: Linear Regression and Model Validation**
+\  
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(stargazer)
+library(psych)
+library(asbio)
+library(ggfortify)
+```
+### **Before Regression: Inspecting the data with graphs and numbers**
+\  
+\  
 
-*Describe the work you have done this week and summarize your learning.*
+#### **Oppening the data file and inspecting data form and structure**: 
+```{r}
+data <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/learning2014.csv")
+data <- dplyr::rename(data, ID = X)
+str(data)
+head(data)
+```
+As can be seen from the table above, the data contains 7 measured variables (and participant ID = X) and 166 answers. The data is structured into a data frame where values participants obtain are coded into rows and variable names are coded into columns. Gender is coded as two level factor (male/female) and the rest are numeric of integer variables.
+\    
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+Now let's take a closer look at the scales used.
+\   
+\  
+
+#### **Inspecting the scales:**
+```{r}
+summary(data)
+any(is.na.data.frame(data))
+```
+We can see that participant age ranges from 17 to 55 with a median value of 22. There are more females than males in the data set (110 vs 56). "Points" refers to how many points the participant scored in the introductory statistics course where the data was collected from 2016. "Attitude" refers to "Global attitude towards statistics", which is a composite variable of 10 different items measuring participants attitude towards statistics. "Deep" (deep learning), "surf" (surface learning), and "stra" (strategic learning) refers to composite variables (12, 12, and 8 items respectively) indicating mean score participant has related to particular learning style. Finally, the last piece of code tells us that there are no missing values in the data set. (For more detailed description of the data see: https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt)
+\  
+
+Next let's examine how the data visually looks with boxplots and density plots.
+\  
+\  
+
+#### **Boxplots and density plots**
+
+```{r}
+par(mfrow=c(1,3))
+boxplot(data$Age, main = "Age")
+boxplot(data$Points, main = "Points")
+boxplot(data$Attitude, main = "Attitude")
+boxplot(data$deep, main = "Deep Learning")
+boxplot(data$surf, main = "Surface Learning")
+boxplot(data$stra, main = "Strategic Learning")
+```
+
+
+```{r}
+Age_aes <- ggplot(data, aes(data$Age))
+Points_aes <- ggplot(data, aes(data$Points))
+Attitude_aes <- ggplot(data, aes(data$Attitude))
+Deep_aes <- ggplot(data, aes(data$deep))
+Surf_aes <- ggplot(data, aes(data$surf))
+Stra_aes <- ggplot(data, aes(data$stra))
+
+D1 <- Age_aes + geom_density() + labs(x = "Age", y = "Density Estimate") + theme_classic()
+D2 <- Points_aes + geom_density() + labs(x = "Points", y = "Density Estimate") + theme_classic()
+D3 <- Attitude_aes + geom_density() + labs(x = "Attitude", y = "Density Estimate") + theme_classic()
+D4 <- Deep_aes + geom_density() + labs(x = "Deep Learning", y = "Density Estimate") + theme_classic()
+D5 <- Surf_aes + geom_density() + labs(x = "Surface Learning", y = "Density Estimate") + theme_classic()
+D6 <- Stra_aes + geom_density() + labs(x = "Strategic Learning", y = "Density Estimate") + theme_classic()
+
+gridExtra::grid.arrange(D1, D2, D3, D4, D5, D6, nrow = 2)
+```
+
+From here we can see that only the "Attitude" and two of the learning variables (stra + surf) are strictly normally distributed. "Deep Learning" is also somewhat normally distributed but  there is a long left tail with some potential outliers. "Age" is quite skewed to the right with a long tale containing potential outliers. "Points" variable is slighty skewed to the right, but is otherwise fairly normally distributed.
+\  
+
+Now let's look how the potential explanatory variables are related to the response variable (i.e. to the "Points").
+\  
+\  
+
+#### **Scatterplots**
+```{r}
+Age_scatter <- ggplot(data, aes(Age, Points))
+Attitude_scatter <- ggplot(data, aes(Attitude, Points))
+Deep_scatter <- ggplot(data, aes(deep, Points))
+Surf_scatter <- ggplot(data, aes(surf, Points))
+Stra_scatter <- ggplot(data, aes(stra, Points))
+
+S1 <- Age_scatter + geom_point() + geom_smooth() + labs(x = "Age", y = "Points") + theme_classic()
+S2 <- Attitude_scatter + geom_point() + geom_smooth() + labs(x = "Attitude", y = "Points") + theme_classic()
+S3 <- Deep_scatter + geom_point() + geom_smooth() + labs(x = "Deep Learning", y = "Points") + theme_classic()
+S4 <- Surf_scatter + geom_point() + geom_smooth() + labs(x = "Surface Learning", y = "Points") + theme_classic()
+S5 <- Stra_scatter + geom_point() + geom_smooth() + labs(x = "Strategic Learning", y = "Points") + theme_classic()
+
+gridExtra::grid.arrange(S1, S2, S3, S4, S5, nrow = 2)
+```
+
+The scatterplots indicate that only "Attitude" variable has, at face value, linear relationship with "Points" variable. The relationship between other variables and "Points" seems to show signs of curvilinearity. Possible reasons for this could be that the relationship between the variables is actually nonlinear or that some outlier values distorts the relationship.
+\  
+
+We will quickly take a look at some of the potential outliers by using bivariate boxplots. According to Vehkalahti & Everitt (2019) bivariate boxplots can be defined as "The bivariate boxplot is based on calculating robust  measures of location, scale, and correlation; it consists essentially of a pair of  concentric ellipses, one of which (the “hinge”) includes 50% of the data, and  the other (called the “fence”) which delineates potential troublesome outliers.  In addition, resistant regression lines of both y on x and x on y are shown,  with their intersection showing the bivariate locations estimator. The acute  angle between the regression lines will be small for a large absolute value of  correlations and large for a small one." (the "fence" equals 99 % CI here).
+\  
+\  
+
+#### **Bivariate boxplots for outliers**
+```{r}
+par(mfrow=c(1,2))
+asbio::bv.boxplot(data$Age, data$Points, robust = TRUE, D = 7, xlab = "Age", ylab = "Points")
+text(data$Age, data$Points, labels=data$ID)
+asbio::bv.boxplot(data$Attitude, data$Points, robust = TRUE, D = 7, xlab = "Attitude", ylab = "Points")
+text(data$Attitude, data$Points, labels=data$ID)
+asbio::bv.boxplot(data$deep, data$Points, robust = TRUE, D = 7, xlab = "Deep Learning", ylab = "Points")
+text(data$deep, data$Points, labels=data$ID)
+asbio::bv.boxplot(data$surf, data$Points, robust = TRUE, D = 7, xlab = "Surface Learning", ylab = "Points")
+text(data$surf, data$Points, labels=data$ID)
+asbio::bv.boxplot(data$stra, data$Points, robust = TRUE, D = 7, xlab = "Strategic Learning", ylab = "Points")
+text(data$stra, data$Points, labels=data$ID)
+```
+
+The bivariate boxplots shows that there multiple potential outliers in the relationship between "Age" and "Points" and few outliers with the other variables as well. We will need to keep this in mind when we start fitting the regression model and be prepared to remove some of the more influential outliers. (Note that participant id is added as a label so outliers can be more easily identified later)
+
+\  
+\  
+
+Finally, let's investigate the correlations between the variables (although, the aforementioned outliers could prove to be problematic here too).
+\  
+\  
+
+#### **Pearson's r and Kendall's tau correlation coefficients**
+```{r}
+Correlations <- select(data, -gender, -ID)
+psych::corr.test(Correlations, y = NULL, use = "pairwise", method = "pearson", adjust = "none", alpha = .05, ci = FALSE, minlength = 7)
+psych::corr.test(Correlations, y = NULL, use = "pairwise", method = "kendall", adjust = "none", alpha = .05, ci = FALSE, minlength = 7)
+```
+Kendall's tau and Pearson's r give fairly similar estimates here for correlations between "Points" and the explanatory variables. There is practially no correlation between "Points" and "Age" or "Deep Learning". There seens to be small correlations between "Points" and "Surface Learning" or "Strategic Learning". The only correlation which is quite large and also statistically significant (with the .05 alpha level for both tau and r) is between "Attitude" and "Points". However, some caution should be applied here since we earlier found quite many outliers and signs of nonlinear relationship between "Points" and many of the other variables.
+\  
+\  
+
+### **Regression: Model fitting and validation**
+\  
+
+Based on the information we learned from the correlations, it seems "Attitude" will probably be the strongest predictor for "Points". We will also test whether adding the learning variables to the model will improve the model fit and if participant gender has any effect in this contex. "Age" variable is dropped at this point, since the earlier inspections revealed problems with the distribution, outliers, and low correlation with the response variable.
+\   
+\  
+
+#### **Basic Model: Points ~ Attitude:**
+```{r}
+m1 <- lm(Points ~ Attitude, data = data)
+summary(m1)
+```
+\  
+
+Here we can see that the model fit significantly improves when we are using the model based on "Attitude" variable (instead of the response variable mean) to predict "Points" variable, F(1, 164) = 38.61, p <. 001. R2 indicates that the model accounts 19.1 % of the variation in the "Points" variable. From the model coefficients we can see that, on average, when the "Attitude" variable increases one unit the "Points" variable increases 0.35 units.
+\  
+
+Now, let's add the learning variables to the model to see if our model fit further improves.
+\  
+
+
+#### **Model2: Points ~ Attitude + surf + deep + stra:**
+```{r}
+m2 <- update(m1, .~. + surf + deep + stra, data = data)
+summary(m2)
+lms1 <- list(m1, m2)
+lm.select(lms1)
+```
+\  
+
+R2 did not notably increase or AIC (Akaike Information Criterion) decrease after adding the learning variables. Moreover, when all the other variables are kept constant in the model, none of the learning variables regression slopes significantly differ from zero (all ps > .10). Also, "Attitude" variable is not noticeably affected by the addition of the learning variables. To sum up, learning variables seems to add very little to our model. Thus, to be parsimonious, we will drop these variables out of the model.
+\  
+
+Next let's see if participant gender has any effect for our model
+\  
+
+#### **Model3: Points ~ Attitude + gender:**
+```{r}
+m3 <- update(m1, .~. + gender, data = data)
+summary(m3)
+lms2 <- list(m1, m3)
+lm.select(lms2)
+```
+\  
+
+R2 increased only marginally and AIC did not decrease. Again, "Attitude" variables estimates remains largely unchanged. This indicates that gender is not that important variable in this context. Thus, our final model will be just "Attitude" predicting "Points".
+\  
+
+Up to this point, we have largely ignored any potential problems within our model. Now it's time to take closer look at the model diagnostics.
+\  
+\  
+
+
+#### **Model diagnostics:**
+```{r}
+autoplot(m1)
+```
+\  
+
+**Residuals vs Fitted.**
+From the first plot we will inspect how well the assumptions of random errors and homoscedasticity  are met. The plot should look like a random array of dots evenly dispersed around zero. There is no noticeable curvature or funnel shape in the data, which implies that there is no serious violation of the assumptions. The same outliers that we identified with the bivariate boxplot are also shown here.
+\  
+
+**Normal Q-Q.**
+If the residuals are normally distributed the dots should closely track the dotted line spliting the plot. Here, the distribution seems to be roughly normal, even though there is some curvature toward the top corner. Again, the same three outliers can be seen at the bottom corner.
+\  
+
+**Scale-Location.**
+This plot is another way to check the homogeneity of variance of the residuals. The plot should ideally include straight horizontal line with random array of dots on each side. The plot obviously is not ideal here, but there is no cause for serious concern.
+\  
+
+**Residuals vs Leverage.**
+From here we can inspect if there are influential cases in the model (i.e. obervations with undue influence to the estimation). From the plot we can see that two of the outlier residuals exceeds 3 standard deviation, but their leverage values are not very high. Let's examine the Cook's distance values to be sure.
+\  
+
+```{r}
+plot(m1, 4)
+```
+\  
+
+Although the case 35 is quite much higher than the rest, all of the values are still below 1 so there should not be cause for great concern.
+\  
+\  
+
+If the model assumptions would have been more seriously violated, we could have tried to do some data transformations (though, these dont always help with residuals) or possibly use robust regression.

@@ -1,4 +1,14 @@
+# **Thoughts and Expectations Concerning the Course**
 
-# About the project
+#### How do I feel right now?
+I'm alright.
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you can use R Markdown syntax.*
+#### What do I expect to learn?
+Basics of R.
+
+#### Were did I learn about the course?
+A friend told me.
+
+
+******
+[Link to my GitHub repository](https://github.com/ohwhalme/IODS-project)
