@@ -1,14 +1,18 @@
 # **Thoughts and Expectations Concerning the Course**
+\  
 
 #### How do I feel right now?
 I'm alright.
+\  
 
 #### What do I expect to learn?
 Basics of R.
+\  
 
-#### Were did I learn about the course?
+#### Where did I learn about the course?
 A friend told me.
-
+\  
+\  
 
 ******
 [Link to my GitHub repository](https://github.com/ohwhalme/IODS-project)
