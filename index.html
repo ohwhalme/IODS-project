@@ -434,7 +434,7 @@ str(data)</code></pre>
 ## 4  4  53      M     10       35 3.500000 2.250000 3.125
 ## 5  5  49      M     22       37 3.666667 2.833333 3.625
 ## 6  6  38      F     21       38 4.750000 2.416667 3.625</code></pre>
-<p>As can be seen from the table above, the data contains 7 measured variables (and participant ID = X) and 166 answers. The data is structured into a data frame where values participants obtain are coded into rows and variable names are coded into columns. Gender is coded as two level factor (male/female) and the rest are numeric of integer variables.  </p>
+<p>As can be seen from the table above, the data contains 7 measured variables (and participant ID) and 166 answers. The data is structured into a data frame where values participants obtain are coded into rows and variable names are coded into columns. Gender is coded as two level factor (male/female) and the rest are numeric or integer variables.  </p>
 <p>Now let’s take a closer look at the scales used.  <br />
  </p>
 </div>
@@ -591,7 +591,7 @@ psych::corr.test(Correlations, y = NULL, use = &quot;pairwise&quot;, method = &q
 <div id="regression-model-fitting-and-validation" class="section level3">
 <h3><strong>Regression: Model fitting and validation</strong></h3>
 <p> </p>
-<p>Based on the information we learned from the correlations, it seems “Attitude” will probably be the strongest predictor for “Points”. We will also test whether adding the learning variables to the model will improve the model fit and if participant gender has any effect in this contex. “Age” variable is dropped at this point, since the earlier inspections revealed problems with the distribution, outliers, and low correlation with the response variable.  <br />
+<p>Based on the information we learned from the correlations, it seems “Attitude” will probably be the strongest predictor for “Points”, so we will add that as the main predictor. We will also test whether adding the learning variables to the model will improve the model fit and if participant gender has any effect in this contex. “Age” variable is dropped at this point, since the earlier inspections revealed problems with the distribution, outliers, and low correlation with the response variable.  <br />
  </p>
 <div id="basic-model-points-attitude" class="section level4">
 <h4><strong>Basic Model: Points ~ Attitude:</strong></h4>
