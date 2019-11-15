@@ -1,30 +1,126 @@
----
-title: "chapter3"
-author: "OHW"
-date: "15 11 2019"
-output: html_document
----
+# **RStudio Exercise 3: Logistic Regression**
+\  
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+For explanation how the data set was created see: https://mooc.helsinki.fi/course/view.php?id=273#section-3
+and R script: https://github.com/ohwhalme/IODS-project/blob/master/data/data_ex3.R
+
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(summarytools)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+#### **Oppening the data file and inspecting data form and structure**: 
+```{r}
+data <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/alc.csv")
+data <- dplyr::rename(data, ID = X)
+str(data)
+glimpse(data)
+any(is.na.data.frame(data))
 ```
+There are no missing values. The data contains 382 observations (rows) and 35 + 1 variables (columns). + 1 being participant ID. Thorough description of the variables in the original data set is given here: https://archive.ics.uci.edu/ml/datasets/Student+Performance
+\  
 
-## Including Plots
+**Note that following data transformations were done before starting the analysis:** 
+\  
 
-You can also embed plots, for example:
+* The variables not used for joining the two data have been combined by averaging (including the grade variables)
+\  
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+* 'alc_use' is the average of 'Dalc' and 'Walc'
+\  
+
+* 'high_use' is TRUE if 'alc_use' is higher than 2 and FALSE otherwise
+\  
+
+\  
+
+#### **Selecting variables and presenting hypotheses**: 
+Respose variable will be the aforementioned **"high_use"**, which indicates whether participant consumes large amounts of alcohol (TRUE if participants averaged workday and weekend alcohol consumption is more than 2; where 1 is "very low" and 5 is "very high").
+\  
+
+In general, men tend to drink more than women (for example, [Wilsnack & Wilsnack, 2013](https://psycnet.apa.org/record/2013-24934-017)), so I think adding gender (**"sex"**) to the model could help us identify heavy drinkers (binary: female/male).
+\  
+
+Many times drinking is also social activity, so I think there might be a positive association between available leisure time and drinking (**"freetime"** i.e. free time after school, where 1 is very low and 5 is very high), and between going out with friends and drinking (**"goout"**, where 1 is very low and 5 is very high).
+\  
+
+With the same logic I assume that there could be a negative association between being involved in extra-curricular activities (**"activities"**) and heavy drinking (binary: yes/no).
+\  
+
+\  
+
+#### **Exploring the distributions of the chosen variables and their relationships with alcohol consumption**
+First let's examine what are the variable frequencies.
+\  
+
+**High alcohol use**
+```{r}
+summarytools::freq(data$high_use, order = "freq", totals = FALSE)
 ```
+\  
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+**Participant gender**
+```{r echo=FALSE}
+summarytools::freq(data$sex, order = "freq", totals = FALSE)
+```
+\  
+
+**Extra-curricular activities**
+```{r echo=FALSE}
+summarytools::freq(data$activities, order = "freq", totals = FALSE)
+```
+\  
+
+**Free time after school**
+```{r echo=FALSE}
+summarytools::freq(data$freetime, order = "freq", totals = FALSE)
+```
+\  
+
+**Going out with friends**
+```{r echo=FALSE}
+summarytools::freq(data$goout, order = "freq", totals = FALSE)
+```
+\  
+
+From here we can see that 29.84 % of participants are classified as heavy users, 51.83 % are female, and 52.62 % are involved in extra-curricular activities. Looking at the valid percentages "freetime" and "goout" variables seems to be fairly normally distributed. To be sure, let's also examine bar plots for these variables.
+\  
+
+```{r}
+freetime_aes <- ggplot(data, aes(data$freetime))
+goout_aes <- ggplot(data, aes(data$goout))
+B1 <- freetime_aes + geom_bar() + labs(x = "Free time", y = "Frequency") + theme_classic()
+B2 <- goout_aes + geom_bar() + labs(x = "Going out", y = "Frequency") + theme_classic()
+gridExtra::grid.arrange(B1, B2, nrow = 2)
+```
+\  
+
+Bar plots confirms that the two interval variables seem to follow approximately the gaussian distribution. Next let's see how each of the explanatory variables are related to the response variable "high_use".
+\  
+
+\  
+
+**Participant gender x High use (cross-tabulation)**
+```{r}
+summarytools::ctable(data$sex, data$high_use)
+chi1 <- chisq.test(data$sex, data$high_use)
+chi1
+round(chi1$residuals, 3)
+```
+There seems to be a statistically significant association between participant gender and heavy drinking, X2(1) = 13.782, p < .001. From the residuals we can see that females are more represented in the FALSE category and less in the TRUE category than what would be expected if the counts would be equally distributed among the cells in the cross-tabulation. Opposite trend can be observed for males. Seems that our initial guess was a correct, males are more likely to be high drinkers than females (39.1 % vs 21.2 %, respectively).
+\  
+
+\  
+
+**Extra-curricular activities x High use (cross-tabulation)**
+```{r echo=FALSE}
+summarytools::ctable(data$activities, data$high_use)
+chi2 <- chisq.test(data$activities, data$high_use)
+chi2
+round(chi2$residuals, 3)
+```
+At first glance, it seems that there is a association between being involved in extra-curricular activities and drinking less (27.4 % vs 32.6 % high drinkers). However, inspection of the chi-square statistic indicates that this association is rather faint, and not statistically significant at the .05 alpha level, X2(1) = 1.0085, p = .32.
+
