@@ -57,7 +57,7 @@ for(column_name in notjoined_columns) {
 # glimpse at the new combined data
 glimpse(alc)
 
-#Averiging of the answers related to weekday and weekend alcohol consumption to create a new column 'alc_use' to the joined data. Then creating new logical column 'high_use' which is TRUE for students for which 'alc_use' is greater than 2 (and FALSE otherwise)
+#Averiging the answers related to weekday and weekend alcohol consumption to create a new column 'alc_use' to the joined data. Then creating new logical column 'high_use' which is TRUE for students for which 'alc_use' is greater than 2 (and FALSE otherwise)
 alc <- mutate(alc, alc_use = (Dalc + Walc) / 2)
 alc <- mutate(alc, high_use = alc_use > 2)
 

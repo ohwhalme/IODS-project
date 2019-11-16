@@ -110,7 +110,7 @@ chi1 <- chisq.test(data$sex, data$high_use)
 chi1
 round(chi1$residuals, 3)
 ```
-There seems to be a statistically significant association between participant gender and heavy drinking, X2(1) = 13.782, p < .001. From the residuals we can see that females are more represented in the FALSE category and less in the TRUE category than what would be expected if the counts would be equally distributed among the cells in the cross-tabulation. Opposite trend can be observed for males. Seems that our initial guess was a correct, males are more likely to be high drinkers than females (39.1 % vs 21.2 %, respectively).
+There seems to be a statistically significant association between participant gender and heavy drinking, X2(1) = 13.782, p < .001. From the residuals we can see that females are more represented in the FALSE category and less in the TRUE category than what would be expected if the counts were equally distributed among the cells in the cross-tabulation. Opposite trend can be observed for males. Seems that our initial guess was a correct, males are more likely to be high drinkers than females (39.1 % vs 21.2 %, respectively).
 \  
 
 \  
@@ -122,5 +122,102 @@ chi2 <- chisq.test(data$activities, data$high_use)
 chi2
 round(chi2$residuals, 3)
 ```
-At first glance, it seems that there is a association between being involved in extra-curricular activities and drinking less (27.4 % vs 32.6 % high drinkers). However, inspection of the chi-square statistic indicates that this association is rather faint, and not statistically significant at the .05 alpha level, X2(1) = 1.0085, p = .32.
+At first glance, it seems that there is a association between being involved in extra-curricular activities and drinking less (27.4 % vs 32.6 % for high drinking). However, inspection of the chi-square statistic indicates that this association is rather faint, and not statistically significant at the .05 alpha level, X2(1) = 1.0085, p = .32.
+\  
 
+\  
+
+**Free time x High use (cross-tabulation)**
+```{r echo=FALSE}
+summarytools::ctable(data$freetime, data$high_use)
+chi3 <- chisq.test(data$freetime, data$high_use)
+chi3
+round(chi3$residuals, 3)
+```
+The test statistic barely undercuts the conventional .05 alpha level, X2(4) = 9.5739, p = .04825. From the residuals we can see that the strongest negative assocciation between the two variable levels seem to be between "freetime" value 1 and when "high_use" is TRUE, and strongest positive association when "freetime" value is 4 or 5 and "high_use" is TRUE. This indicates that there is a association between having lot's of free time and also being a heavy drinker (the same trend can also be noted when cross-tabulation percentages are eyeballed).
+\  
+
+\  
+
+**Going out x High use (cross-tabulation)**
+```{r echo=FALSE}
+summarytools::ctable(data$goout, data$high_use)
+chi4 <- chisq.test(data$goout, data$high_use)
+chi4
+round(chi4$residuals, 3)
+```
+Looking at the percentages it seems clear that going out more often is associated with high alcohol use (from "goout" values 1 to 3 percentage of high users are 13.6-18.3 %, and from values 4 to 5 percentage of high users are 49.4-60.4 %). The chi-square statistic and respective residuals give support for this observation, X2(4) =  58.368, p < .001.
+\  
+
+To sum up, the cross-tabulations and associated chi-square tests seem to provide some support for our initial hypotheses concerning the relation between high alcohol use and the explanatory variables (with exception of "activities" and "high_use"). Next, let's investigate how there variables can be used to predict high alcohol use in logistic regression model.
+\  
+
+\  
+
+
+#### **Logistic regression: Model fitting and interpretation**
+Based on our earlier inspections, it seems that participant gender and how often participant goes out with friends are the best predictors of high alcohol use. So we'll start with a model where "sex" and "goout" and used to predict "high_use" and then we'll add the rest of the explanatory variables to see if our model fit improves.
+\  
+
+**Model 1: High alchohol use ~ Participant gender + Going out with friends**
+\  
+
+```{r}
+model1 <- glm(high_use ~ goout + sex, family=binomial(link='logit'), data=data)
+summary(model1)
+```
+\  
+
+**Model 2: High alchohol use ~ Participant gender + Going out with friends + Leisure time + Extra-curricular activities**
+```{r}
+model2 <- glm(high_use ~ goout + sex + freetime + activities, family=binomial(link='logit'), data=data)
+summary(model2)
+```
+First of all, we can see that "goout" and "sex" are significant predictors of "high_use" in both models, while "freetime" and "activities" are not when all the other variables are kept constant in the model. Including "freetime" and "activities" does not noticeably change the coefficients of "goout" and "sex". Moreover, when model 1 and 2 are compared against the null model (i.e. intercept only) we can see that there is a slight decrease in residual deviance in model 2 compared to model 1, but AIC ([Akaike Information Criterion](https://en.wikipedia.org/wiki/Akaike_information_criterion)), which also takes into account how many new variables have been added (i.e. risk of overfitting), does not decrease. Taken together, this indicates that we are better off predicting "high_use" with the simpler model 1.
+\  
+
+**Interpreting the model (1) coefficients**
+
+```{r}
+OR <- coef(model1) %>% exp
+CI <- confint(model1) %>% exp
+cbind(OR, CI)
+```
+The model coefficients represent the expected change in the log odds of "high_use" when the explanatory variables increase one unit (keeping all the other variables constant in the model). The odds ratio is calculated by taking exp() function of these coefficients, and thus indicates the proportionate change in odds between the explanatory variable levels. Here, OR for "goout" is 2.14 which means that when "goout" variable increases one unit, the odds of participant belonging to high alcohol use category are, on average, 2.14 times greater. "Sex" is a binary variable but the interperation is much the same, when one unit increase takes place (i.e. when we go from female to male category) odds of belonging to high alcohol use category goes up 2.40 times. Thus, both, being a male and going out with friends more often, increases the participants risk of being a heavy drinker (which is in line with our earlier hypotheses). Confidence intervals indicate that the direction of the ORs received here will likely be same in the population also (CIs dont include 0).
+\  
+
+Next, let's see how accurate our model is.
+\  
+
+\  
+
+**Model (1) accuracy**
+
+```{r}
+probabilities <- predict(model1, type = "response")
+data <- mutate(data, probability = probabilities)
+data <- mutate(data, prediction = probability > 0.5)
+table(high_use = data$high_use, prediction = data$prediction)
+
+InformationValue::misClassError(data$high_use, data$prediction, threshold = 0.5)
+
+```
+From here we can see that our model correctly identifies 251 out of 268 cases as being moderate drinkers, and 51 out of 114 cases as being heavy drinkers (when treshold level is kept at 0.5). This leads to average number of wrong predictions being 0.2094 (i.e. accuracy is approximately 79 %). Even though our model is quite good at predicting **who is not a heavy drinker** (251/268 = 0.94) it performs worse than change level alone when predicting **who is a heavy drinker** (51/114 = 0.45).
+\  
+
+\  
+
+**Bonus: Cross-validitation**
+```{r}
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+loss_func(data$high_use, data$probability)
+
+library(boot)
+cv <- cv.glm(data = data, cost = loss_func, glmfit = model1, K = 10)
+cv$delta[1]
+```
+10-fold cross-validitation of the model gives us fairly similar accuracy estimation as our original data (mean wrong = 0.2329843 % vs 0.2094241 %, respectively).
