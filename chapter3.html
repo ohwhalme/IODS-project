@@ -782,7 +782,7 @@ loss_func(data$high_use, data$probability)</code></pre>
 ##     logit</code></pre>
 <pre class="r"><code>cv &lt;- cv.glm(data = data, cost = loss_func, glmfit = model1, K = 10)
 cv$delta[1]</code></pre>
-<pre><code>## [1] 0.2356021</code></pre>
+<pre><code>## [1] 0.2329843</code></pre>
 <p>10-fold cross-validitation of the model gives us fairly similar accuracy estimation as our original data (mean wrong = 0.2329843 % vs 0.2094241 %, respectively).</p>
 </div>
 </div>
