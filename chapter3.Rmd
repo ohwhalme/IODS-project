@@ -185,7 +185,6 @@ First of all, we can see that "goout" and "sex" are significant predictors of "h
 OR <- coef(model1) %>% exp
 CI <- confint(model1) %>% exp
 cbind(OR, CI)
-ResourceSelection::hoslem.test(model1$y, fitted(model1))
 ```
 The model coefficients represent the expected change in the log odds of "high_use" when the particular explanatory variable increases one unit (keeping all the other variables constant in the model). The odds ratio is calculated by taking exp() function of these coefficients, and thus indicates the proportionate change in odds between the explanatory variable levels. Here, OR for "goout" is 2.14 which means that when "goout" variable increases one unit, the odds of participant belonging to high alcohol use category are, on average, 2.14 times greater. "Sex" is a binary variable but the interperation is much the same, when one unit increase takes place (i.e. when we go from female to male category) odds of belonging to high alcohol use category goes up 2.40 times. Thus, both, being a male and going out with friends more often, increases the participants risk of being a heavy drinker (which is in line with our earlier hypotheses). Confidence intervals indicate that the direction of the ORs received here will likely be same as they are in the population (CIs dont include 1).
 

@@ -729,12 +729,6 @@ CI &lt;- confint(model1) %&gt;% exp</code></pre>
 ## (Intercept) 0.02208168 0.008754964 0.05186666
 ## goout       2.14025612 1.708110942 2.71701439
 ## sexM        2.39559680 1.484457552 3.91015147</code></pre>
-<pre class="r"><code>ResourceSelection::hoslem.test(model1$y, fitted(model1))</code></pre>
-<pre><code>## 
-##  Hosmer and Lemeshow goodness of fit (GOF) test
-## 
-## data:  model1$y, fitted(model1)
-## X-squared = 20.349, df = 8, p-value = 0.009093</code></pre>
 <p>The model coefficients represent the expected change in the log odds of “high_use” when the particular explanatory variable increases one unit (keeping all the other variables constant in the model). The odds ratio is calculated by taking exp() function of these coefficients, and thus indicates the proportionate change in odds between the explanatory variable levels. Here, OR for “goout” is 2.14 which means that when “goout” variable increases one unit, the odds of participant belonging to high alcohol use category are, on average, 2.14 times greater. “Sex” is a binary variable but the interperation is much the same, when one unit increase takes place (i.e. when we go from female to male category) odds of belonging to high alcohol use category goes up 2.40 times. Thus, both, being a male and going out with friends more often, increases the participants risk of being a heavy drinker (which is in line with our earlier hypotheses). Confidence intervals indicate that the direction of the ORs received here will likely be same as they are in the population (CIs dont include 1).</p>
 <p> </p>
 <p> </p>
@@ -788,7 +782,7 @@ loss_func(data$high_use, data$probability)</code></pre>
 ##     logit</code></pre>
 <pre class="r"><code>cv &lt;- cv.glm(data = data, cost = loss_func, glmfit = model1, K = 10)
 cv$delta[1]</code></pre>
-<pre><code>## [1] 0.2356021</code></pre>
+<pre><code>## [1] 0.2277487</code></pre>
 <p>10-fold cross-validitation of the model gives us fairly similar accuracy estimation as our original data (mean wrong = 0.2329843 % vs 0.2094241 %, respectively).</p>
 </div>
 </div>
