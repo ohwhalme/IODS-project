@@ -158,7 +158,7 @@ To sum up, the cross-tabulations and associated chi-square tests seem to provide
 \  
 
 #### **Logistic regression: Model fitting and interpretation**
-Based on our earlier inspections, it seems that participant gender and how often participant goes out with friends are the best predictors of high alcohol use. So we'll start with a model where "sex" and "goout" and used to predict "high_use" and then we'll add the rest of the explanatory variables to see if our model fit improves.
+Based on our earlier inspections, it seems that participant gender and how often participant goes out with friends are the best predictors of high alcohol use. So we'll start with a model where "sex" and "goout" are used to predict "high_use" and then we'll add the rest of the explanatory variables to see if our model fit improves.
 \  
 
 **Model 1: High alchohol use ~ Participant gender + Going out with friends**
