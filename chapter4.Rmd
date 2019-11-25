@@ -1,0 +1,316 @@
+# **RStudio Exercise 4: Clustering and classification**
+\  
+
+```{r include=FALSE}
+library(MVN)
+library(ggplot2)
+library(GGally)
+library(psych)
+library(corrplot)
+library(dplyr)
+```
+
+#### **Oppening the data file and inspecting data structure**:
+```{r}
+library(MASS)
+data("Boston")
+data <- as.data.frame(Boston)
+str(data)
+dim(data)
+any(is.na.data.frame(data))
+```
+From here we can see that there are 14 variables (columns) and 506 observations (rows) in the data set and no missing values. All variables are either numerical or integer. The data is described in detail **[HERE](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html)**. The following variables are included:
+\  
+
+
+* **crim** = per capita crime rate by town.
+\  
+
+* **zn** = proportion of residential land zoned for lots over 25,000 sq.ft.
+\  
+
+* **indus** = proportion of non-retail business acres per town..
+\  
+
+* **chas** = Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+\  
+
+* **nox** = nitrogen oxides concentration (parts per 10 million).
+\  
+
+* **rm** = average number of rooms per dwelling.
+\  
+
+* **age** = proportion of owner-occupied units built prior to 1940.
+\  
+
+* **dis** = weighted mean of distances to five Boston employment centres.
+\  
+
+* **rad** = index of accessibility to radial highways.
+\  
+
+* **tax** = full-value property-tax rate per \$10,000.
+\  
+
+* **ptratio** = pupil-teacher ratio by town.
+\  
+
+* **black** = 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+\  
+
+* **lstat** = lower status of the population (percent).
+\  
+
+* **medv** = median value of owner-occupied homes in \$1000s.
+\  
+
+\  
+
+#### **Graphical overview of the data and summaries:**
+Let's first inspect the univariate normality of the variables.
+```{r}
+crim_aes <- ggplot(data, aes(data$crim))
+zn_aes <- ggplot(data, aes(data$zn))
+indus_aes <- ggplot(data, aes(data$indus))
+chas_aes <- ggplot(data, aes(data$chas))
+nox_aes <- ggplot(data, aes(data$nox))
+rm_aes <- ggplot(data, aes(data$rm))
+age_aes <- ggplot(data, aes(data$age))
+dis_aes <- ggplot(data, aes(data$dis))
+rad_aes <- ggplot(data, aes(data$rad))
+tax_aes <- ggplot(data, aes(data$tax))
+ptratio_aes <- ggplot(data, aes(data$ptratio))
+black_aes <- ggplot(data, aes(data$black))
+lstat_aes <- ggplot(data, aes(data$lstat))
+medv_aes <- ggplot(data, aes(data$medv))
+
+D1 <- crim_aes + geom_density() + labs(x = "Crime", y = "Density Estimate") + theme_classic()
+D2 <- zn_aes + geom_density() + labs(x = "Zn", y = "Density Estimate") + theme_classic()
+D3 <- indus_aes + geom_density() + labs(x = "Indus", y = "Density Estimate") + theme_classic()
+D4 <- chas_aes + geom_density() + labs(x = "Chas", y = "Density Estimate") + theme_classic()
+D5 <- nox_aes + geom_density() + labs(x = "Nox", y = "Density Estimate") + theme_classic()
+D6 <- rm_aes + geom_density() + labs(x = "Rm", y = "Density Estimate") + theme_classic()
+D7 <- age_aes + geom_density() + labs(x = "Age", y = "Density Estimate") + theme_classic()
+D8 <- dis_aes + geom_density() + labs(x = "Dis", y = "Density Estimate") + theme_classic()
+D9 <- rad_aes + geom_density() + labs(x = "Rad", y = "Density Estimate") + theme_classic()
+D10 <- tax_aes + geom_density() + labs(x = "Tax", y = "Density Estimate") + theme_classic()
+D11 <- ptratio_aes + geom_density() + labs(x = "Ptratio", y = "Density Estimate") + theme_classic()
+D12 <- black_aes + geom_density() + labs(x = "Black", y = "Density Estimate") + theme_classic()
+D13 <- lstat_aes + geom_density() + labs(x = "Lstat", y = "Density Estimate") + theme_classic()
+D14 <- medv_aes + geom_density() + labs(x = "Medv", y = "Density Estimate") + theme_classic()
+
+gridExtra::grid.arrange(D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D12, D13, D14, nrow = 5)
+```
+\  
+
+It seems clear from the density plots that none of the variables are very normally distributed (with possibly the exception of "rm"). Let's also check the data with box-plots. It is also noteworthy that the variables have been measured using very different scales (e.g. "dis" = 2.5 to 12.5 vs "tax" = 200 to 700)
+\  
+
+```{r}
+B1 <- ggplot(data = data, aes(x = "", y = crim)) + geom_boxplot() + theme_classic()
+B2 <- ggplot(data = data, aes(x = "", y = zn)) + geom_boxplot() + theme_classic()
+B3 <- ggplot(data = data, aes(x = "", y = indus)) + geom_boxplot() + theme_classic()
+B4 <- ggplot(data = data, aes(x = "", y = chas)) + geom_boxplot() + theme_classic()
+B5 <- ggplot(data = data, aes(x = "", y = nox)) + geom_boxplot() + theme_classic()
+B6 <- ggplot(data = data, aes(x = "", y = rm)) + geom_boxplot() + theme_classic()
+B7 <- ggplot(data = data, aes(x = "", y = age)) + geom_boxplot() + theme_classic()
+B8 <- ggplot(data = data, aes(x = "", y = dis)) + geom_boxplot() + theme_classic()
+B9 <- ggplot(data = data, aes(x = "", y = rad)) + geom_boxplot() + theme_classic()
+B10 <- ggplot(data = data, aes(x = "", y = tax)) + geom_boxplot() + theme_classic()
+B11 <- ggplot(data = data, aes(x = "", y = ptratio)) + geom_boxplot() + theme_classic()
+B12 <- ggplot(data = data, aes(x = "", y = black)) + geom_boxplot() + theme_classic()
+B13 <- ggplot(data = data, aes(x = "", y = lstat)) + geom_boxplot() + theme_classic()
+B14 <- ggplot(data = data, aes(x = "", y = medv)) + geom_boxplot() + theme_classic()
+
+gridExtra::grid.arrange(B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12, B13, B14, ncol = 3)
+```
+\  
+
+Box-plots confirms what we saw earlier from the density plots, all of the variables are more or less skewed and indicate departure from the gaussian distribution. Box-plots also highlights the potential outliers that are present in many of the variables. For example, it seems that the "rm" contains lot of outliers on both ends of the distribution (which was also reflected in the long tails of the density plot).
+\  
+
+Since the univariate plots strongly indicates non-normality, the data will not satisfy multivariate normality either. But just to be sure, let's order a plot of squared [Mahalanobis distance values](https://en.wikipedia.org/wiki/Mahalanobis_distance) of the data versus quantiles of the chi-square distribution. If the data comes from multivariate normal distribution the squared Mahalanobis distance values should approximate the chi-square distribution.
+
+```{r}
+Multiv <- mvn(data, mvnTest= "hz", multivariatePlot= "qq")
+```
+\  
+
+Here, we can see a clear departure from normality, as was expected based on the univariate plots.
+\  
+
+Next we'll investigate bivariate relationships of the variables. We will do this by examining the scatter plots of each variable pair and then the corresponding correlation coefficients.
+
+```{r}
+ggpairs(data, upper = list(continuous = "points"), lower = NULL, diag = NULL) + theme_classic()
+```
+\  
+
+From here we can see that many of the variables does not seem to have a linear relationship with each other. This especially clear for variable "chas" which produce very disperse patterns with all the other variables. Variables "crime"  and "rad" also shows some notable deviation from linearity with many of the other variables.
+\  
+
+Both, the outliers spotted earlier and the nonlinear relationship among some of the variables, weakens our trust on numerical estimates that expect linear relationship between the variables. Nonetheless, next we will calcutate bivariate pearson correlation coefficients for all of the variables. We will also highlight the correlations by making a visual representation of the correlation matrix.
+\  
+
+
+```{r}
+psych::corr.test(data, y = NULL, use = "pairwise", method = "pearson", adjust = "none", alpha = .05, ci = FALSE, minlength = 7)
+cor_matrix<-round(cor(data), digits = 2)
+corrplot::corrplot(cor_matrix, method="circle", type = "upper", cl.pos = "b", tl.pos = "d", tl.cex = 0.6)
+```
+\  
+
+As could be expected based on the bivariate plots, "chas" does not have a significant linear correlation between any of the other variables. The coefficients range from close to zero to over .7 (+/-), largest correlation being .91 between "rad" and "tax". However, some caution should be applied here since we did not examine in-depth the linearity of each variable pair and/or possible reasons for the outliers.
+\  
+
+Next, we will use the [scale()](https://www.rdocumentation.org/packages/base/versions/3.6.1/topics/scale) function on the data and inspect how this will affect our variables.
+\  
+
+\  
+
+#### **Scaling the data, transforming "crim" variable, and creating training and test sets:**
+First let's see how our variables look before scaling.
+```{r}
+psych::describe(data)
+```
+\  
+
+Then, let's use the scale function, which subtracts the column means from the corresponding columns and divide the difference with standard deviation.
+```{r}
+data_scaled <- as.data.frame(scale(data))
+psych::describe(data_scaled)
+```
+As we can see, this type of centering gives us variables with mean of 0 and standard deviation of 1, while not having an effect on the data distribution or correlations between variables. This is useful for many of the multivariate methods where it is desireable that variable variance does not fluctuate too much in the data set.
+\  
+
+Next, let's tranform the "crim" variable to categorical variable so that we use the quantiles as break points to separate the categories (**1st = low, 2nd = medium low, 3rd = medium high, 4th = high**). Afterwards, we will remove the old "crim" from the data set and add the new **"crime"** variable.
+```{r}
+bins <- quantile(data_scaled$crim)
+labels_vec <- c("low", "med_low", "med_high", "high")
+crime <- cut(data_scaled$crim, breaks = bins, include.lowest = TRUE, label = labels_vec)
+table(crime)
+data_scaled <- dplyr::select(data_scaled, -crim)
+data_scaled <- data.frame(data_scaled, crime)
+```
+\  
+
+Finally, we will split our data training and test sets, where 80 % of the observations belongs to the training set. (Note that the [set.seed()](http://rfunction.com/archives/62) function will be applied so the results are reproducible)
+```{r}
+n <- nrow(data_scaled)
+set.seed(5)
+ind <- sample(n,  size = n * 0.8)
+training_set <- data_scaled[ind,]
+test_set <- data_scaled[-ind,]
+```
+\  
+
+\  
+
+#### **Linear discriminant analysis (LDA):**
+[LDA](https://www.r-bloggers.com/linear-discriminant-analysis-in-r-an-introduction/) is a classification method which can be used to find variables that best separate different classes, predict classes of new data, and/or reduce data dimensions.
+\  
+
+Here, we try to predict the categories of the newly formed "crime" variable by using all the other variables in the training data set. 
+```{r}
+LDA <- lda(data_scaled$crime ~ ., data = data_scaled)
+LDA
+```
+From here we can see the *prior probabilities* (probability of randomly selecting an observation from particular level of the target variable), *group means* (mean of each predictor variable in each target variable level), *coefficients of linear discriminants* (linear combination of predictor variables that are used to form the LDA decision rule), and *proportions of trace* (proportion of between-class variance that is explained by successive discriminant functions). (Definitions taken from [here](http://www.sthda.com/english/articles/36-classification-methods-essentials/146-discriminant-analysis-essentials-in-r/) and [here](https://rpubs.com/Nolan/298913))
+\  
+
+Next, we will draw a biplot to visualize the results further.
+```{r}
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+classes <- as.numeric(training_set$crime)
+plot(LDA, dimen = 2, col = classes, pch = classes)
+lda.arrows(LDA, myscale = 1.2)
+```
+\  
+
+The biplot shows us a scatterplot of LD1 and LD2 (linear discriminants). As can be seen, each level of the target variable has it's own color and predictor variables are shown as arrows in the middle. The lenght and direction of the arrows depicts how particular variable impacts the model (based on the coefficients of LD1 and 2).
+\  
+
+There is a lot of overlap between the target variable classes (i.e. separation is not great) and the number of predictor variables makes it difficult to interpret how each variable is positioned in relation to each other. Only "nod", "zn", and "rad" variables are clearly protruding outwards. 
+\  
+
+Next we will try to predict the target variable in the test data using the LDA model constructed here.
+\  
+
+\  
+
+#### **Predicting "crime" in the test data:**
+```{r}
+correct_classes <- test_set$crime
+test_set <- dplyr::select(test_set, -crime)
+lda.pred <- predict(LDA, newdata = test_set)
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+As we can see, the model performs best when predicting cases of "high" (26 out of 27 = .96) and worst when predicting cases of "low" (13 out of 23 = .57). Overall the accuracy rate for the model in the test data is 72 out of 102 (i.e. ~71%). The model works better than chance level alone (25 %) but there is still room for improvement. One possible reason why the predictive power is not higher could be that many of the [model assumptions](https://en.wikipedia.org/wiki/Linear_discriminant_analysis#Assumptions) were violated (e.g. multivariate normality was not met and the correlations indicated high levels multicollinearity between some the predictors).
+\  
+
+\  
+
+#### **K-means clustering:**
+According to [Vehkalahti and Everitt (2018)](https://www.crcpress.com/Multivariate-Analysis-for-the-Behavioral-Sciences-Second-Edition/Vehkalahti-Everitt/p/book/9780815385158) "The k-means clustering technique seeks to partition the n individuals in a  set of multivariate data into k groups or clusters, (G1, G2,..., Gk), where G*i*  denotes the set of n*i* individuals in the *i*th group, and k is given [--] by minimizing some numerical criterion, low values of  which are considered indicative of a “good” solution."
+\  
+
+That is, we are trying to partition the data into some predetermined number of clusters. Here, we will first run a exploratory k-means algorithm on the scaled (see [scale()](https://www.rdocumentation.org/packages/base/versions/3.6.1/topics/scale); we'll use scaling to get comparable distances between the variables) Boston dataset and determine appropriate number of cluster based on that. Then we will do another k-means clustering with that number of clusters.
+```{r}
+library(MASS)
+data("Boston")
+DF_Boston <- scale(Boston)
+DF_Boston = data.frame(DF_Boston)
+
+k_max <- 10
+twcss <- sapply(1:k_max, function(k){kmeans(DF_Boston, k)$tot.withinss})
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+\  
+
+As can be seen from the code, we have specified that we will allow maximum of 10 cluster to be formed. Then we have plotted different cluster solutions against *within cluster sum of squares* (WCSS), which is a measure of the variability of the observations within each cluster. Smaller WCSS indicate more compact clusters. 
+\  
+
+We will use this plot to spot a solution where the WCSS is as small as possible while number of cluster remains as few as possible. Noticeable "elbow" in the plot occures after 2 cluster solution, so we will proceed with our k-means clustering with k = 2. 
+```{r}
+km <-kmeans(DF_Boston, centers = 2)
+km$size
+km$centers
+ggpairs(DF_Boston, upper = list(continuous = "points"), lower = NULL, diag = NULL, mapping=ggplot2::aes(colour = km$cluster)) + theme_classic()
+```
+\  
+
+From the output we can see that there are 177 observations in the first cluster and 329 observations in the second cluster. Below that, each variable mean is presented for clusters 1 and 2. Finally, each variable pair is plotted in a scatterplot and cluster membership is used as a marker.
+\  
+
+The colours separate the two cluster groups and show how the clusters are positioned in a bivariate scatterplot for each variable. The plot is quite messy, but for example crime rate ("crim") variable seems to form distinct patterns for the two clusters when it is plotted against most of the other variables in the data. 
+\  
+
+\  
+
+#### **Bonus:**
+We will perform K-means clustering with k=3, and then LDA using the clusters as target classes.
+```{r}
+library(MASS)
+data("Boston")
+DF_Boston <- scale(Boston)
+DF_Boston = data.frame(DF_Boston)
+km <-kmeans(DF_Boston, centers = 3)
+DF_Boston <- dplyr::mutate(DF_Boston, clusters = km$cluster)
+
+LDA2 <- lda(clusters ~ ., data = DF_Boston)
+LDA2
+
+classes <- as.numeric(DF_Boston$clusters)
+plot(LDA2, col = classes)
+```
+\  
+
+Unfortunately I ran out of time, and could not get the arrow function to work properly. So I present the results here with out the arrows. Based on the LD1 & 2 coefficients the most influential variables are "rad", "nox", and "tax".
