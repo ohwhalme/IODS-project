@@ -726,7 +726,7 @@ str(data2)</code></pre>
 <ul>
 <li><strong>“escape.exoticism”, “spirituality”, “healthy”, “diuretic”, “friendliness”, “iron.absorption”, “feminine”, “sophisticated”, “slimming”, “exciting”, and “relaxing”, and “effect.on.health”</strong>.</li>
 </ul>
-<pre class="r"><code>MCA_data &lt;- select(data2, one_of(c(&quot;sex&quot;, &quot;SPC&quot;, &quot;age_Q&quot;, &quot;escape.exoticism&quot;, &quot;spirituality&quot;, &quot;healthy&quot;, &quot;diuretic&quot;, &quot;friendliness&quot;, &quot;iron.absorption&quot;, &quot;feminine&quot;, &quot;sophisticated&quot;, &quot;slimming&quot;, &quot;exciting&quot;, &quot;relaxing&quot;, &quot;effect.on.health&quot;)))
+<pre class="r"><code>MCA_data &lt;- dplyr::select(data2, one_of(c(&quot;sex&quot;, &quot;SPC&quot;, &quot;age_Q&quot;, &quot;escape.exoticism&quot;, &quot;spirituality&quot;, &quot;healthy&quot;, &quot;diuretic&quot;, &quot;friendliness&quot;, &quot;iron.absorption&quot;, &quot;feminine&quot;, &quot;sophisticated&quot;, &quot;slimming&quot;, &quot;exciting&quot;, &quot;relaxing&quot;, &quot;effect.on.health&quot;)))
 str(MCA_data)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    300 obs. of  15 variables:
 ##  $ sex             : Factor w/ 2 levels &quot;F&quot;,&quot;M&quot;: 2 1 1 2 2 2 2 1 2 2 ...

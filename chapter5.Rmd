@@ -174,7 +174,7 @@ And the following **variables concerning perception of tea**:
 * **"escape.exoticism", "spirituality", "healthy", "diuretic", "friendliness", "iron.absorption", "feminine", "sophisticated", "slimming", "exciting", and "relaxing", and "effect.on.health"**.
 
 ```{r}
-MCA_data <- select(data2, one_of(c("sex", "SPC", "age_Q", "escape.exoticism", "spirituality", "healthy", "diuretic", "friendliness", "iron.absorption", "feminine", "sophisticated", "slimming", "exciting", "relaxing", "effect.on.health")))
+MCA_data <- dplyr::select(data2, one_of(c("sex", "SPC", "age_Q", "escape.exoticism", "spirituality", "healthy", "diuretic", "friendliness", "iron.absorption", "feminine", "sophisticated", "slimming", "exciting", "relaxing", "effect.on.health")))
 str(MCA_data)
 res.MCA <- MCA(MCA_data, graph = FALSE)
 fviz_screeplot(res.MCA, addlabels = TRUE, ylim = c( 0, 45))
