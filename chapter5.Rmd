@@ -195,7 +195,7 @@ fviz_cos2(res.MCA, choice = "var", axes = 1: 2)
 It seems, that our two dimensions does not represent particularly well "escape-exoticism", "iron absoption", "spirituality", or "effect on health". Because we are primarily practicing how to use the method, we don't have strong reasons to keep any particular variable in the model. Thus, let's get rid of the the aforementioned variables and run the MCA again.
 
 ```{r}
-MCA_data2 <- select(MCA_data, one_of(c("sex", "SPC", "age_Q", "healthy", "diuretic", "friendliness", "feminine", "sophisticated", "slimming", "exciting", "relaxing")))
+MCA_data2 <- dplyr::select(MCA_data, one_of(c("sex", "SPC", "age_Q", "healthy", "diuretic", "friendliness", "feminine", "sophisticated", "slimming", "exciting", "relaxing")))
 res2.MCA <- MCA(MCA_data2, graph = FALSE)
 fviz_screeplot(res2.MCA, addlabels = TRUE, ylim = c( 0, 45))
 fviz_mca_var(res2.MCA, repel = TRUE, ggtheme = theme_classic(), col.var = "black")
