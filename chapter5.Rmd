@@ -1,0 +1,227 @@
+# **RStudio Exercise 5: Dimensionality Reduction Techniques**
+\  
+```{r include=FALSE}
+library(ggplot2)
+library(GGally)
+library(psych)
+library(corrplot)
+library(dplyr)
+library(FactoMineR)
+library(factoextra)
+```
+```{r}
+data <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/human.csv", row.names = 1)
+```
+In the first part of the assignment we will be using data obtained from [UNDP](http://hdr.undp.org/en/content/human-development-index-hdi). Some modifications have been made to data (see specifics from here: https://github.com/ohwhalme/IODS-project/blob/master/data/data_ex5.R). Currently the data contains the following variables:
+\  
+
+\  
+
+* **Edu2.F**" = Proportion of females with at least secondary education
+\  
+
+* **Labo.FM** = Proportion of females in the labour force divided by proportion of males in the labour force
+\  
+
+* **Edu.Exp** = Expected years of schooling 
+\  
+
+* **Life.Exp** = Life expectancy at birth
+\  
+
+* **GNI** = Gross National Income per capita
+\  
+
+* **Mat.Mor** = Maternal mortality ratio
+\  
+
+* **Ado.Birth** = Adolescent birth rate
+\  
+
+* **Parli.F** = Percetange of female representatives in parliament
+\  
+
+Furthermore, **Country name**s have been assigned as rows in the data frame:
+```{r}
+row.names(data)
+```
+
+\  
+
+\  
+
+### **Graphical overview of the data and summaries**
+```{r}
+str(data)
+psych::describe(data)
+```
+The data contains 155 observations (rows; i.e. 155 different country names, see above) and 8 variables (columns). The variables have been measured with many different scales, and thus we can see a lot of variation in the variable means, ranges and standard deviations.
+\  
+
+Next, let's inspect how the variable distributions and bivariate relationships look numerically and visually. We'll do this with bivariate Pearson correlation coefficients and plotting scatterplots and density plots.
+```{r}
+GGally::ggpairs(data, lower = list(continuous = "smooth_loess")) + theme_classic()
+cor_matrix<-round(cor(data), digits = 2)
+corrplot::corrplot(cor_matrix, method="circle", type = "upper", cl.pos = "b", tl.pos = "d", tl.cex = 0.6)
+```
+\  
+
+From the diagonal axis we can see density plots of each of the variables. "Edu.Exp" and "Parli.F" are the only variable that seem roughly normally distributed. All other variables seem more or less skewed ("GNI" and "Mat.Mor." having particularly extended tail).
+\  
+
+Scatterplots in the lower corner indicate that most of the bivariate relationships are curvilinear rather than strictly linear.
+\  
+
+Correlation coefficients range from close to zero to over .7 (+/-). Largest correlation is between "Mat.Mor" and "Life.Exp", where the r = .86. Most of the variables seem to share good amount of variance with each other. However, "Parli.F" and "Labo.FM" are not highly correlated with any of the other variables (all rs < .26), which could prove to be problematic when dimension reduction methods are applied. Also, we should keep in mind, that curvilinear relationship was found for most of the bivariate relationships and outlier were not inspected in-detail, so methods which assume linear relationship between variables might not provide optimal estimators for association.
+\  
+
+\  
+
+### **Principal Component Analysis (PCA)**
+According to [Vehkalahti and Everitt (2018)](https://www.crcpress.com/Multivariate-Analysis-for-the-Behavioral-Sciences-Second-Edition/Vehkalahti-Everitt/p/book/9780815385158): 
+
+> "*The basic goal of PCA is to describe variation in a set of correlated variables,  x1, x2,..., xq, in terms of a new set of uncorrelated variables, y1, y2,..., yq,  each of which is a linear combination of the x variables. The new variables  are derived in decreasing order of “importance” in the sense that y1 accounts  for as much as possible of the variation in the original data among all linear  combinations of x1, x2,..., xq. Then, y2 is chosen to account for as much as possible of the remaining variation, subject to being uncorrelated with y1,  and so on. The new variables defined by this process, y1, y2,..., yq, are the  principal components.*"
+
+That is, in essence, PCA is a method to simplify multivariate data with many correlated variables by reducing dimensions in the data.
+\  
+
+Next we will perform PCA with the above mentioned UNDP data set. Typically, you would standardize the data before running PCA, so the structure of the principal components would not be dependent on the choice of measurement units. Furthermore, large differences between variance of the variables will result in principal components where the variables with the largest variance tend to dominate the first (and statistically speaking the most important) components. However, to demonstrate this effect, we will initially not standardize the variables.
+```{r}
+res.PCA <- FactoMineR::PCA(data, scale.unit = FALSE, ncp = 5, graph = FALSE)
+factoextra::get_eigenvalue(res.PCA)
+factoextra::fviz_eig(res.PCA)
+var <- factoextra::get_pca_var(res.PCA)
+var$contrib
+fviz_contrib(res.PCA, choice = "var", axes = 1, top = 10)
+fviz_contrib(res.PCA, choice = "var", axes = 2, top = 10)
+factoextra::fviz_pca_var(res.PCA, col.var = "black")
+```
+\  
+
+As can be seen from the output, when the variables are not standardized, variables with relatively larger variance (which is caused, in this case, mainly by differences in the measurement scales) completely dominate the retained principal components.
+\  
+
+The scree plot, which plots principal components and their respective [eigenvalues](https://medium.com/@dareyadewumi650/understanding-the-role-of-eigenvectors-and-eigenvalues-in-pca-dimensionality-reduction-10186dad0c5c) (here directly translated into variance retained) indicates that our first principal component retains over 99 % of the variation in the data and out second principal component less than 0.1 %. From the variable contribution plots (i.e. [how much the variables "correlate" with each component](https://stats.idre.ucla.edu/spss/seminars/efa-spss/)) we can see that component 1 consists mainly of variable "GNI" and component 2 mainly of variable "Mat.Mor". Not surprisingly, "GNI" and "Mar.Mor" are the two variables with largest range and standard deviation out of all the variables. The final bi-plot gives us little additional information, since the representation is so distorted. Basically, we can infer that "GNI" and "Mat.Mor" are negatively correlated with each and are represented well with the two principal components.
+\  
+
+To get more sensible results, we'll perform the analysis again, this time with standardized variables.
+```{r}
+res.PCA2 <- FactoMineR::PCA(data, scale.unit = TRUE, ncp = 5, graph = FALSE)
+factoextra::get_eigenvalue(res.PCA2)
+factoextra::fviz_eig(res.PCA2)
+var2 <- factoextra::get_pca_var(res.PCA2)
+var2$contrib
+fviz_contrib(res.PCA2, choice = "var", axes = 1, top = 10)
+fviz_contrib(res.PCA2, choice = "var", axes = 2, top = 10)
+fviz_pca_var(res.PCA2, col.var = "black")
+```
+\  
+
+Now the two first principal components together retain approximately 70 % of the variation in the orginal data (~54 % and ~16 %, respectively). Component 1 is best depicted by "Life.Exp", "Mat.Mor", "Edu.Exp", and "Ado.Birth"; and component 2 by "Labo.FM" and "Parli.F".
+\  
+
+The bi-plot indicates that maternal mortality and adolescent birth rate are positively correlated with each other, and negatively correlated to GNI, expected years of schooling, life expectancy at birth, and to proportion of females with at least secondary education (which are all positively correlated with each other). These six variables all load mainly to component 1. Percetange of female representatives in parliament is positively correlated with the ratio of females to males in the labour force. These two variables mainly load to component 2.
+\  
+
+Thus, the first component could be interpreted as something like "standards of living" and the second component as "gender equality". Finally, let's investigate how different countries are distributed among these two components.
+```{r}
+fviz_pca_ind(res.PCA2, labelsize = 0.6, col.ind = "black")
+```
+\  
+
+The plot is quite messy, since we have over 100 countries visualized simultaneously. However, the fourfold table gives us a rough pattern, how the principal components could be used to classify different countries. On the lower left corner we see countires with relatively lower standards of living and worse gender equality, and on the upper left corner we see countries with lower standards of living and higher gender equality. On the right side we can infer the same pattern, but with countries with relatively higher standards of living.
+\  
+
+Let's make one more plot to get a bit more interpretable picture of the countries. To do this, we'll make a plot, where we include only 50 countries with the biggest contribution to the component solution.
+```{r}
+fviz_pca_ind(res.PCA2, labelsize = 0.6, col.ind = "black", select.ind = list( contrib = 50), repel = TRUE)
+```
+\  
+
+Now that we can actually read the labels, we can say that the interpretation that we gave to our components, is not complete nonsense. It seems intuitively compelling, that many of the Western Europe (and especially Nordic) countries are located in the upper right corner with relatively high standard of living and high gender equality. On the lower right corner we can see countries such Saudi Arabia, Kuwait, and Qatar, where standard of living is higher but gender equality is worse. The left side of the plot is also somewhat convincing, countries such as Rwanda score higher on the gender equality and countries like Afghanistan and Yemen lower. Obviously, we also see lot of "expections" where our interpretation of the components doesn't really reflect the coordinates of the countries in the plot (e.g. Rwanda is probably not the most "gender equal" country out of all the 155 countries, but the high score on component 2 reflects mainly the exceptional number of females in the parliament). It is also noteworthy, that our two components only retain around 70 % of the variation from the orginal data set, and that our first component accounts a lot more varition than our second component.
+\  
+
+\  
+
+### **Multiple Correspondence Analysis (MCA)**
+[Vehkalahti and Everitt (2018)](https://www.crcpress.com/Multivariate-Analysis-for-the-Behavioral-Sciences-Second-Edition/Vehkalahti-Everitt/p/book/9780815385158), informally, define correspondence analysis (which MCA is extension of) as:
+
+>"*Quintessentially, correspondence analysis is a technique for displaying multivariate (often bivariate) categorical data graphically, by deriving coordinates  to represent the categories of both the row and the column variables, which  may then be plotted to display the pattern of association between the variables  graphically.*"
+
+Next we will perform a MCA to "tea" data set taken from the FactoMineR package. First, let's open the data and explore it a bit.
+```{r}
+library(FactoMineR)
+data("tea")
+data2 <- as.data.frame(tea)
+str(data2)
+any(is.na.data.frame(data2))
+```
+As we can see, we have 300 responders (rows) and 36 variables (columns). Everything except the participant age ("age") are categorical variables. 7 of the categorical variables are non-binary and the rest are binary. There are no missing values.
+\  
+
+According to FactoMineRs [webpage](http://factominer.free.fr/factomethods/multiple-correspondence-analysis.html) the data consist of: "*300 tea consumers [who] have answered a survey about their consumption of tea. The questions were about how they consume tea, how they think of tea and descriptive questions (sex, age, socio-professional category and sport practise). Except for the age, all the variables are categorical. For the age, the data set has two different variables: a continuous and a categorical one.*"
+\  
+
+Our main interest here will be, how the socio-demographic factors are associated with peoples perception of tea. To investigate this, we will include the **following socio-demographic variables** to the analysis: 
+\  
+
+* **"sex", "SPC", age_Q"**. 
+\  
+
+And the following **variables concerning perception of tea**: 
+\  
+
+* **"escape.exoticism", "spirituality", "healthy", "diuretic", "friendliness", "iron.absorption", "feminine", "sophisticated", "slimming", "exciting", and "relaxing", and "effect.on.health"**.
+
+```{r}
+MCA_data <- select(data2, one_of(c("sex", "SPC", "age_Q", "escape.exoticism", "spirituality", "healthy", "diuretic", "friendliness", "iron.absorption", "feminine", "sophisticated", "slimming", "exciting", "relaxing", "effect.on.health")))
+str(MCA_data)
+res.MCA <- MCA(MCA_data, graph = FALSE)
+fviz_screeplot(res.MCA, addlabels = TRUE, ylim = c( 0, 45))
+var3 <- get_mca_var(res.MCA)
+fviz_mca_var(res.MCA, repel = TRUE, ggtheme = theme_classic(), col.var = "black")
+```
+\  
+
+From the scree-plot we can see that two dimensional representation of data is not accounting for much of the variation observed in the original table (only 17.7 %). As a result, most of the variables are concentrated near the center of the bi-plot. We can visualize this by coloring each variable according to it's cos2 value (which gives us indication how well each category is represented by the two dimensions).
+\  
+
+```{r}
+fviz_mca_var(res.MCA, col.var = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE, ggtheme = theme_classic())
+fviz_cos2(res.MCA, choice = "var", axes = 1: 2)
+```
+\  
+
+It seems, that our two dimensions does not represent particularly well "escape-exoticism", "iron absoption", "spirituality", or "effect on health". Because we are primarily practicing how to use the method, we don't have strong reasons to keep any particular variable in the model. Thus, let's get rid of the the aforementioned variables and run the MCA again.
+
+```{r}
+MCA_data2 <- select(MCA_data, one_of(c("sex", "SPC", "age_Q", "healthy", "diuretic", "friendliness", "feminine", "sophisticated", "slimming", "exciting", "relaxing")))
+res2.MCA <- MCA(MCA_data2, graph = FALSE)
+fviz_screeplot(res2.MCA, addlabels = TRUE, ylim = c( 0, 45))
+fviz_mca_var(res2.MCA, repel = TRUE, ggtheme = theme_classic(), col.var = "black")
+```
+\  
+
+Our inertia (variation) retained by the two dimensions slightly increased (from 17.7 % to 20.2 %), but most of the variation still is not depicted by our bi-plot. Nevertheless, let's inspect a bit closer which variables contribute most to these two dimensions.
+\  
+
+```{r}
+fviz_contrib(res2.MCA, choice = "var", axes = 1, top = 15)
+fviz_contrib(res2.MCA, choice = "var", axes = 2, top = 15)
+fviz_contrib(res2.MCA, choice = "var", axes = 1: 2, top = 15)
+```
+\  
+
+It seems that age and work position (SPC) are especially influential variables, while most of the tea perception categories (with exception of "feminine"/not.feminine) are less influential.
+\  
+
+Let's do one more bi-plot, where the contribution of each category is also visible.
+```{r}
+fviz_mca_var(res2.MCA, col.var = "contrib", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), repel = TRUE, ggtheme = theme_classic())
+```
+\  
+
+Here the proximity of the categories to each other reflects how similar these column points are when their profiles are compared down the rows (which represent the respondents in this case). Similar profiles are grouped together and negatively correlated variables are positioned on opposite sides of the plot. For example, category "student" and age group "15-24" are clearly associated with each other and they contribute strongly to the neagative pole of the dimension 2. Likewise, age group "+60" and "non-worker" are associated with each other and contribute most to the negative pole of dimension 1.
+\  
+
+To get back to our research question, we can preliminary say that there might be an association between being non-worker and/or +60 and perceiving tea as slimming. Also, there might be an association between being senior (job position) and/or "45-59" and perceiving tea as not relaxing. Being male might to be associated with perceiving tea as not feminine, not relaxing, and not friendly; and beign female with feminine, friendly, and relaxing. Obviously caution should be applied here, since we are only eyeballing the bi-plot and our dimension are not reataining most of the inertia in the first place.
