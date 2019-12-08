@@ -1,0 +1,15 @@
+# **RStudio Exercise 6: Analysis of Longitudinal Data**
+
+\  
+```{r include=FALSE}
+library(dplyr)
+library(tidyr)
+```
+BPRS <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/BPRS.csv")
+BPRS <- select(BPRS, -X)
+BPRSL <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/BPRSL.csv")
+BPRSL <- select(BPRSL, -X)
+RATS <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/RATS.csv")
+RATS <- select(RATS, -X)
+RATSL <- read.csv("C:/Users/OHW/Desktop/R/IODS-project/data/RATSL.csv")
+RATSL <- select(RATSL, -X)
